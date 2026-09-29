@@ -3,8 +3,10 @@ __pycache__/
 .venv/
 venv/
 *.egg-info/
-*.pkl              # memory snapshot dumps from torch.cuda.memory._dump_snapshot
+# memory snapshot dumps from torch.cuda.memory._dump_snapshot
+*.pkl
+# model checkpoints, if you save any
 *.pt
-*.pth               # model checkpoints, if you save any
+*.pth
 memory_timeline.html
 .ipynb_checkpoints/
