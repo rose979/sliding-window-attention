@@ -44,11 +44,7 @@ class Attention(nn.Module):
         self.out_proj = nn.Linear(config.hidden_size, config.hidden_size)
         self.dropout = nn.Dropout(config.dropout)
 
-    def forward(self, x, kv_cache=None):
-        # KV caching is out of scope: the experiment measures training steps only.
-        if kv_cache is not None:
-            raise NotImplementedError("KV caching is not supported by this attention module")
-
+    def forward(self, x):
         b, num_tokens, _ = x.shape
         # Project the input into keys, queries and values: (b, L, D) each.
         # Compute: ~3 * L * D^2 multiply-adds per sequence, linear in L.

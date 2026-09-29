@@ -14,5 +14,7 @@ def test_output_shape():
 def test_global_layer_placement():
     config = Config(hidden_size=64, num_heads=4, global_every_n=5)
     blocks = [TransformerBlock(config, layer_idx=i) for i in range(10)]
-    global_layers = [i for i, b in enumerate(blocks) if b.attn.is_global]
+    global_layers = [b.layer_idx for b in blocks if b.is_global]
     assert global_layers == [4, 9]
+    # The block's label must match what its attention module actually does
+    assert all(b.is_global == b.attn.is_global for b in blocks)

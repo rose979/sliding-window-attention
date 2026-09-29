@@ -78,14 +78,3 @@ def test_sliding_with_large_window_equals_global():
     x = torch.randn(2, 20, config.hidden_size)
     # window_size >= L: every token sees all previous tokens in both paths
     assert torch.allclose(sliding(x), global_(x), atol=1e-5)
-
-
-def test_kv_cache_not_supported():
-    config = Config(hidden_size=64, num_heads=4)
-    attn = Attention(config)
-    x = torch.randn(1, 4, config.hidden_size)
-    try:
-        attn(x, kv_cache=object())
-    except NotImplementedError:
-        return
-    assert False, "expected NotImplementedError"

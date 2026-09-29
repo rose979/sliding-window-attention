@@ -11,3 +11,4 @@ class Config:
     window_size: int = 32
     global_every_n: int = 5
     dropout: float = 0.0
+    mlp_ratio: int = 4
