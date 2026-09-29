@@ -4,7 +4,6 @@ import torch.nn as nn
 from .attention import Attention
 from .config import Config
 
-
 class TransformerBlock(nn.Module):
     def __init__(self, config: Config, layer_idx: int):
         super().__init__()

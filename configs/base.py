@@ -7,7 +7,7 @@ class Config:
     hidden_size: int = 768
     num_layers: int = 12
     num_heads: int = 12
-    max_seq_len: int = 4096
-    window_size: int = 512
+    max_seq_len: int = 2048
+    window_size: int = 32
     global_every_n: int = 5
     dropout: float = 0.0

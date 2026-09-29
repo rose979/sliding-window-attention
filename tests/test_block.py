@@ -3,7 +3,6 @@ import torch
 from swla.block import TransformerBlock
 from swla.config import Config
 
-
 def test_output_shape():
     config = Config(hidden_size=64, num_heads=4)
     block = TransformerBlock(config, layer_idx=0)
