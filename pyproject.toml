@@ -17,5 +17,12 @@ dev = [
 requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+# Two packages: the model code (src/swla) and the experiment configs (configs/).
+# Installing `configs` makes `import configs.ratio_5to1` work from any directory,
+# e.g. when a script is started as `python scripts/train.py`.
+[tool.setuptools]
+packages = ["swla", "configs"]
+
+[tool.setuptools.package-dir]
+swla = "src/swla"
+configs = "configs"
