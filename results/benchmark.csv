@@ -1,0 +1,9 @@
+config,seq_len,batch_size,params_m,layers,threads,warmup_steps,steps,peak_ram_gb,base_ram_gb,step_ram_gb,step_time_s,step_time_median_s,step_time_std_s,status
+configs.global_baseline,128,1,31.64,GGGGGGGGGG,12,2,20,0.849,0.84,0.009,0.3637,0.3584,0.0158,ok
+configs.ratio_5to1,128,1,31.64,LLLLGLLLLG,12,2,20,0.847,0.832,0.015,0.3874,0.3824,0.0176,ok
+configs.global_baseline,512,1,31.64,GGGGGGGGGG,12,2,20,0.991,0.889,0.102,1.1171,1.1037,0.0373,ok
+configs.ratio_5to1,512,1,31.64,LLLLGLLLLG,12,2,20,0.95,0.853,0.097,1.0053,0.9996,0.0415,ok
+configs.global_baseline,1024,1,31.64,GGGGGGGGGG,12,2,20,1.473,0.958,0.515,2.4978,2.4825,0.0585,ok
+configs.ratio_5to1,1024,1,31.64,LLLLGLLLLG,12,2,20,1.253,0.893,0.36,1.8742,1.8704,0.0581,ok
+configs.global_baseline,2048,1,31.64,GGGGGGGGGG,12,2,20,3.228,0.839,2.389,8.0304,7.4313,1.1533,ok
+configs.ratio_5to1,2048,1,31.64,LLLLGLLLLG,12,2,20,2.142,0.969,1.172,3.9477,3.8885,0.2377,ok
