@@ -1,0 +1,5 @@
+seq_len,repetitions,peak_ram_gb_baseline_mean,peak_ram_gb_baseline_std,peak_ram_gb_sliding_mean,peak_ram_gb_sliding_std,peak_ram_gb_diff_pct_mean,peak_ram_gb_diff_pct_std,step_ram_gb_baseline_mean,step_ram_gb_baseline_std,step_ram_gb_sliding_mean,step_ram_gb_sliding_std,step_ram_gb_diff_pct_mean,step_ram_gb_diff_pct_std,step_time_median_s_baseline_mean,step_time_median_s_baseline_std,step_time_median_s_sliding_mean,step_time_median_s_sliding_std,step_time_median_s_diff_pct_mean,step_time_median_s_diff_pct_std,attention_scores_theory_diff_pct
+128,3,0.8473,0.0025,0.8483,0.0025,0.118,0.0004,0.01,0.0035,0.0127,0.0015,,,0.3486,0.1245,0.3707,0.1355,6.0303,1.3003,-40.0
+512,3,0.995,0.007,0.949,0.0017,-4.6207,0.5268,0.1057,0.0021,0.097,0.0017,-8.1841,2.0955,1.1938,0.0886,1.0274,0.0258,-13.6701,5.6103,-70.0
+1024,3,1.493,0.0157,1.249,0.0017,-16.3364,0.9372,0.529,0.0122,0.367,0.0096,-30.5708,3.461,2.7021,0.2385,2.0758,0.1923,-23.1989,0.4406,-75.0
+2048,3,3.246,0.0156,2.1427,0.0006,-33.9895,0.3272,2.3887,0.0006,1.176,0.01,-50.7675,0.429,7.5,0.385,4.1171,0.2074,-45.1005,0.8371,-77.5
