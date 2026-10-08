@@ -12,6 +12,8 @@ writes a summary table and two figures:
 Relative differences are computed within each repetition (both models measured in
 the same run) and then averaged. This matters for time: the CPU speed varies between
 runs, so absolute seconds differ between repetitions, but the ratio within a run is stable.
+Before aggregating, check_repetitions() makes sure every file is complete and all files
+come from the same settings, so the baseline/4:1 pairs are valid.
 
 Example:
     python scripts/plot_results.py results/benchmark_rep1.csv results/benchmark_rep2.csv results/benchmark_rep3.csv
@@ -20,7 +22,9 @@ import argparse
 import csv
 import importlib
 import math
+import re
 import statistics
+from collections import Counter
 from pathlib import Path
 
 import matplotlib
@@ -47,6 +51,10 @@ SURFACE, TEXT, TEXT_2, GRID = "#fcfcfb", "#0b0b0b", "#52514e", "#e4e2dc"
 # Below this baseline value a relative difference is mostly measurement noise
 # (e.g. step RAM at L=128: 0.010 vs. 0.013 GB) and is left out of the relative plot
 MIN_FOR_RELATIVE = 0.05
+# Measurement settings that must be identical in every row of every repetition
+SETTINGS = ["batch_size", "warmup_steps", "steps", "threads"]
+# Model description that must be identical for each config across repetitions
+MODEL = ["params_m", "layers"]
 
 
 # ----------------------------------------------------------------------------------
@@ -59,6 +67,70 @@ def load(files: list[str]) -> list[list[dict]]:
         with open(path, newline="") as f:
             reps.append([r for r in csv.DictReader(f) if r["status"] == "ok"])
     return reps
+
+
+def check_repetitions(files: list[str], reps: list[list[dict]]) -> None:
+    """Make sure the repetitions can be compared pairwise; raise ValueError otherwise.
+
+    aggregate() pairs the baseline and the 4:1 value of the same file by position, so
+    every file must contain exactly one valid row per (config, L) for both models, all
+    files must cover the same lengths, and all must come from the same measurement
+    settings and model. Collects every problem and reports them together.
+    """
+    problems = []
+
+    # The same file twice would count one run twice and make the spread look smaller
+    resolved = [Path(f).resolve() for f in files]
+    for path in sorted({p for p in resolved if resolved.count(p) > 1}):
+        problems.append(f"{path}: given more than once")
+
+    lengths_per_file = []
+    for path, rep in zip(files, reps):
+        if not rep:
+            problems.append(f"{path}: no valid measurements")
+            continue
+        # Exactly one valid row per (config, L): a missing row means an aborted or
+        # failed measurement (filtered out in load), two rows are ambiguous
+        counts = Counter((r["config"], int(r["seq_len"])) for r in rep)
+        lengths = sorted({seq_len for _, seq_len in counts})
+        for seq_len in lengths:
+            for config in (BASELINE, SLIDING):
+                n_rows = counts[(config, seq_len)]
+                if n_rows != 1:
+                    reason = "missing or aborted" if n_rows == 0 else "duplicate rows"
+                    problems.append(f"{path}: {n_rows} valid rows for {config} at L={seq_len} ({reason})")
+        unknown = sorted({config for config, _ in counts} - {BASELINE, SLIDING})
+        if unknown:
+            problems.append(f"{path}: unexpected configs {unknown}")
+        lengths_per_file.append((path, lengths))
+
+    # All files must cover the same sequence lengths
+    if len({tuple(lengths) for _, lengths in lengths_per_file}) > 1:
+        detail = "; ".join(f"{path}: {lengths}" for path, lengths in lengths_per_file)
+        problems.append(f"files cover different sequence lengths ({detail})")
+
+    # Same measurement settings everywhere, same model per config across files
+    rows = [(path, r) for path, rep in zip(files, reps) for r in rep]
+    for key in SETTINGS:
+        values = {r[key] for _, r in rows}
+        if len(values) > 1:
+            problems.append(f"different {key} across measurements: {sorted(values)}")
+    for config in (BASELINE, SLIDING):
+        for key in MODEL:
+            values = {r[key] for _, r in rows if r["config"] == config}
+            if len(values) > 1:
+                problems.append(f"different {key} for {config} across files: {sorted(values)}")
+
+    if problems:
+        raise ValueError("repetitions can't be compared:\n  - " + "\n  - ".join(problems))
+
+
+def find_repetition_files(directory: Path) -> list[str]:
+    """benchmark_rep<number>.csv files, sorted by number (rep2 before rep10).
+    Other names like benchmark_rep_old.csv are not picked up."""
+    pattern = re.compile(r"benchmark_rep(\d+)\.csv")
+    matches = [(int(m.group(1)), p) for p in directory.iterdir() if (m := pattern.fullmatch(p.name))]
+    return [str(p) for _, p in sorted(matches)]
 
 
 def value(rep: list[dict], config: str, seq_len: int, key: str) -> float:
@@ -226,17 +298,22 @@ def save(fig, out: Path) -> None:
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("files", nargs="*", help="benchmark CSVs, one per repetition "
-                        "(default: results/benchmark_rep*.csv)")
+                        "(default: results/benchmark_rep<number>.csv)")
     parser.add_argument("--out-dir", default="results")
     args = parser.parse_args()
 
-    files = args.files or sorted(str(p) for p in Path("results").glob("benchmark_rep*.csv"))
+    files = args.files or find_repetition_files(Path("results"))
     if not files:
         parser.error("no benchmark CSV files given or found in results/")
+    reps = load(files)
+    try:
+        check_repetitions(files, reps)
+    except ValueError as error:
+        parser.error(str(error))
     out_dir = Path(args.out_dir)
     (out_dir / "figures").mkdir(parents=True, exist_ok=True)
 
-    summary = aggregate(load(files))
+    summary = aggregate(reps)
     write_summary(summary, out_dir / "summary.csv")
     plot_absolute(summary, out_dir / "figures" / "absolute")
     plot_relative(summary, out_dir / "figures" / "relative")
