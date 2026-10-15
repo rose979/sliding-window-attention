@@ -10,3 +10,5 @@ venv/
 *.pth
 memory_timeline.html
 .ipynb_checkpoints/
+# presentation for the talk, kept local only
+notebooks/presentation.ipynb
