@@ -17,7 +17,7 @@ class TransformerBlock(nn.Module):
     Every `global_every_n`-th block uses global attention, all others use local
     sliding-window attention (see attention.py).
 
-    Notation in the comments below: b = batch size, L = num_tokens, D = hidden_size.
+    Notation in the comments below: b = batch size, L = num_tokens, D = emb_dim.
 
     Memory: every tensor in this block except the attention scores inside
     `self.attn` has shape (b, L, D) or (b, L, mlp_ratio * D), so it grows linearly
@@ -38,7 +38,7 @@ class TransformerBlock(nn.Module):
         # LayerNorm standardizes each token vector over its D values, then applies a
         # learned scale and shift (2 * D parameters).
         self.attn = Attention(config, is_global=is_global)
-        self.attn_norm = nn.LayerNorm(config.hidden_size)
+        self.attn_norm = nn.LayerNorm(config.emb_dim)
 
         # MLP sublayer with its pre-norm: D -> mlp_ratio * D -> D, applied to each
         # token separately.
@@ -46,11 +46,11 @@ class TransformerBlock(nn.Module):
         # Memory: the (b, L, mlp_ratio * D) hidden activation is the largest
         # per-token tensor in the block (linear in L).
         self.mlp = nn.Sequential(
-            nn.Linear(config.hidden_size, config.mlp_ratio * config.hidden_size),
+            nn.Linear(config.emb_dim, config.mlp_ratio * config.emb_dim),
             nn.GELU(),
-            nn.Linear(config.mlp_ratio * config.hidden_size, config.hidden_size),
+            nn.Linear(config.mlp_ratio * config.emb_dim, config.emb_dim),
         )
-        self.mlp_norm = nn.LayerNorm(config.hidden_size)
+        self.mlp_norm = nn.LayerNorm(config.emb_dim)
 
         # Dropout on each sublayer output before the residual addition ("residual
         # dropout"). One module can serve both sublayers: it has no parameters or

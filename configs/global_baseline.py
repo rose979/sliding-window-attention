@@ -7,7 +7,7 @@ from swla.config import Config
 # so the two configs differ only in the attention setting (checked in tests/test_configs.py).
 config = replace(
     Config(),
-    hidden_size=512,
+    emb_dim=512,
     num_layers=10,
     num_heads=8,
     vocab_size=256,

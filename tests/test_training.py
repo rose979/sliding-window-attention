@@ -6,7 +6,7 @@ from swla.training import random_batch, train_step
 
 
 def small_config(**overrides) -> Config:
-    base = dict(vocab_size=50, hidden_size=64, num_heads=4, num_layers=5, window_size=8)
+    base = dict(vocab_size=50, emb_dim=64, num_heads=4, num_layers=5, window_size=8)
     base.update(overrides)
     return Config(**base)
 

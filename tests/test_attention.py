@@ -5,17 +5,17 @@ from swla.config import Config
 
 
 def test_output_shape_sliding():
-    config = Config(hidden_size=64, num_heads=4, window_size=8)
+    config = Config(emb_dim=64, num_heads=4, window_size=8)
     attn = Attention(config)
-    x = torch.randn(2, 20, config.hidden_size)
+    x = torch.randn(2, 20, config.emb_dim)
     out = attn(x)
     assert out.shape == x.shape
 
 
 def test_output_shape_global():
-    config = Config(hidden_size=64, num_heads=4)
+    config = Config(emb_dim=64, num_heads=4)
     attn = Attention(config, is_global=True)
-    x = torch.randn(2, 16, config.hidden_size)
+    x = torch.randn(2, 16, config.emb_dim)
     out = attn(x)
     assert out.shape == x.shape
 
@@ -50,7 +50,7 @@ def test_chunked_matches_full_reference():
     for W in (4, 32):
         # L a multiple of W, not a multiple, shorter than W, equal to W
         for L in (2 * W, 2 * W + 6, W - 1, W, 70):
-            config = Config(hidden_size=h * d, num_heads=h, window_size=W)
+            config = Config(emb_dim=h * d, num_heads=h, window_size=W)
             attn = Attention(config)
             q = torch.randn(b, h, L, d, requires_grad=True)
             k = torch.randn(b, h, L, d, requires_grad=True)
@@ -71,10 +71,10 @@ def test_chunked_matches_full_reference():
 
 def test_sliding_with_large_window_equals_global():
     torch.manual_seed(0)
-    config = Config(hidden_size=64, num_heads=4, window_size=32)
+    config = Config(emb_dim=64, num_heads=4, window_size=32)
     sliding = Attention(config, is_global=False)
     global_ = Attention(config, is_global=True)
     global_.load_state_dict(sliding.state_dict())
-    x = torch.randn(2, 20, config.hidden_size)
+    x = torch.randn(2, 20, config.emb_dim)
     # window_size >= L: every token sees all previous tokens in both paths
     assert torch.allclose(sliding(x), global_(x), atol=1e-5)

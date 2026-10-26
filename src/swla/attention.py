@@ -16,7 +16,7 @@ class Attention(nn.Module):
                      -> memory O(L * W).
 
     Notation in the comments below: b = batch size, h = num_heads, L = num_tokens,
-    d = head_dim, D = hidden_size = h * d, W = window_size, n = number of chunks.
+    d = head_dim, D = emb_dim = h * d, W = window_size, n = number of chunks.
 
     Memory: everything outside the score/weight tensors (x, queries, keys, values,
     context vectors) is O(L * D) in both paths. The paths only differ in the size of
@@ -27,21 +27,21 @@ class Attention(nn.Module):
 
     def __init__(self, config: Config, is_global: bool = False, qkv_bias: bool = False):
         super().__init__()
-        assert (config.hidden_size % config.num_heads == 0), \
-            "hidden_size must be divisible by num_heads"
+        assert (config.emb_dim % config.num_heads == 0), \
+            "emb_dim must be divisible by num_heads"
 
-        self.d_out = config.hidden_size
+        self.d_out = config.emb_dim
         self.num_heads = config.num_heads
-        self.head_dim = config.hidden_size // config.num_heads
+        self.head_dim = config.emb_dim // config.num_heads
         self.window_size = config.window_size
         self.is_global = is_global
 
         # Parameters: 4 * D^2 (+ biases) per layer, independent of L and of the path
-        self.W_query = nn.Linear(config.hidden_size, config.hidden_size, bias=qkv_bias)
-        self.W_key = nn.Linear(config.hidden_size, config.hidden_size, bias=qkv_bias)
-        self.W_value = nn.Linear(config.hidden_size, config.hidden_size, bias=qkv_bias)
+        self.W_query = nn.Linear(config.emb_dim, config.emb_dim, bias=qkv_bias)
+        self.W_key = nn.Linear(config.emb_dim, config.emb_dim, bias=qkv_bias)
+        self.W_value = nn.Linear(config.emb_dim, config.emb_dim, bias=qkv_bias)
         # Linear layer that mixes the outputs of the individual heads
-        self.out_proj = nn.Linear(config.hidden_size, config.hidden_size)
+        self.out_proj = nn.Linear(config.emb_dim, config.emb_dim)
         self.dropout = nn.Dropout(config.dropout)
 
     def forward(self, x):
@@ -175,6 +175,8 @@ class Attention(nn.Module):
 
         # 3. Keys/values of the previous chunk (a zero chunk in front of chunk 0),
         #    concatenated with the own chunk: (b, h, n, 2W, d)
+        #    F.pad() adds a zero chunk in front of the sequence, so that pairing 
+        #    with the previous chunk works
         #    Cost: keys and values are now stored twice (2 * L * d per head),
         #    linear in L and small compared to the saving in step 4.
         keys_prev = F.pad(keys, (0, 0, 0, 0, 1, 0))[:, :, :-1]

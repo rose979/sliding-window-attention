@@ -5,7 +5,7 @@ from swla.model import Model
 
 
 def test_forward_output_shape():
-    config = Config(vocab_size=100, hidden_size=32, num_heads=4, num_layers=2, max_seq_len=64, window_size=8)
+    config = Config(vocab_size=100, emb_dim=32, num_heads=4, num_layers=2, max_seq_len=64, window_size=8)
     model = Model(config)
     input_ids = torch.randint(0, config.vocab_size, (2, 16))
     logits, loss = model(input_ids)
@@ -15,7 +15,7 @@ def test_forward_output_shape():
 
 def test_forward_with_targets_returns_loss():
     torch.manual_seed(0)
-    config = Config(vocab_size=100, hidden_size=32, num_heads=4, num_layers=2, window_size=8)
+    config = Config(vocab_size=100, emb_dim=32, num_heads=4, num_layers=2, window_size=8)
     model = Model(config)
     tokens = torch.randint(0, config.vocab_size, (2, 17))
     input_ids, targets = tokens[:, :-1], tokens[:, 1:]    # predict the next token
@@ -28,24 +28,24 @@ def test_forward_with_targets_returns_loss():
 
 
 def test_num_parameters_counts_tied_matrix_once():
-    config = Config(vocab_size=100, hidden_size=32, num_heads=4, num_layers=2)
+    config = Config(vocab_size=100, emb_dim=32, num_heads=4, num_layers=2)
     model = Model(config)
     assert model.num_parameters() == sum(p.numel() for p in set(model.parameters()))
 
 
 def test_weight_tying_shares_one_matrix():
-    config = Config(vocab_size=100, hidden_size=32, num_heads=4, num_layers=2)
+    config = Config(vocab_size=100, emb_dim=32, num_heads=4, num_layers=2)
     model = Model(config)
     assert model.lm_head.weight is model.embed.weight
     # model.parameters() yields a shared tensor only once
     total = sum(p.numel() for p in model.parameters())
-    untied = total + config.vocab_size * config.hidden_size
+    untied = total + config.vocab_size * config.emb_dim
     assert sum(p.numel() for p in set(model.parameters())) == total < untied
 
 
 def test_gpt2_style_initialization():
     torch.manual_seed(0)
-    config = Config(vocab_size=1000, hidden_size=128, num_heads=4, num_layers=8)
+    config = Config(vocab_size=1000, emb_dim=128, num_heads=4, num_layers=8)
     model = Model(config)
     residual_std = 0.02 / (2 * config.num_layers) ** 0.5
 

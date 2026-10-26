@@ -12,7 +12,7 @@ class Model(nn.Module):
     Every `global_every_n`-th block uses global attention, all others local
     sliding-window attention (see block.py / attention.py).
 
-    Notation in the comments below: b = batch size, L = num_tokens, D = hidden_size,
+    Notation in the comments below: b = batch size, L = num_tokens, D = emb_dim,
     V = vocab_size, N = num_layers.
 
     No positional encoding (NoPE), deliberately:
@@ -41,7 +41,7 @@ class Model(nn.Module):
         # Token embedding: V x D table, one row per vocabulary entry
         # (24.6M parameters with the defaults V = 32000, D = 768).
         # Output (b, L, D), linear in L.
-        self.embed = nn.Embedding(config.vocab_size, config.hidden_size)
+        self.embed = nn.Embedding(config.vocab_size, config.emb_dim)
         # N transformer blocks; each decides itself whether it is global
         # (block.is_global). With global_every_n=5: layers 5, 10, 15, ... are global.
         self.blocks = nn.ModuleList(
@@ -49,13 +49,13 @@ class Model(nn.Module):
         )
         # Final LayerNorm: needed with pre-norm blocks, since the residual stream x
         # itself is never normalized inside the blocks.
-        self.final_norm = nn.LayerNorm(config.hidden_size)
+        self.final_norm = nn.LayerNorm(config.emb_dim)
         # Language modeling head: D -> V logits (one next-token score per vocabulary
         # entry). Memory: the (b, L, V) logits are large, e.g. ~262 MB for b=1,
         # L=2048, V=32000 (about as much as one global layer's attention weights with
         # 12 heads), plus same-sized tensors in cross-entropy. Identical in all
         # configurations, but it can hide the attention differences in total RAM.
-        self.lm_head = nn.Linear(config.hidden_size, config.vocab_size, bias=False)
+        self.lm_head = nn.Linear(config.emb_dim, config.vocab_size, bias=False)
 
         # Weight tying (as in GPT-2): lm_head uses the embedding matrix as its weight.
         # Both are (vocab_size, D) with row v belonging to token v, so the logit for
